@@ -1,0 +1,20 @@
+{
+  "name": "@CourseMap/database",
+  "version": "0.0.1",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "db:pull": "prisma db pull",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.0.0"
+  }
+}
