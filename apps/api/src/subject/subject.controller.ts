@@ -22,6 +22,21 @@ export class SubjectController {
     return this.subjectService.findOne(+id);
   }
 
+  @Get('code/:code')
+  findByCode(@Param('code') code: string) {
+    return this.subjectService.findByCode(code);
+  }
+
+  @Get('course/:courseId')
+  findByCourse(@Param('courseId') courseId: string) {
+    return this.subjectService.findByCourse(+courseId);
+  }
+
+  @Get(':id/requires')
+  findRequiredSubjects(@Param('id') id: string) {
+    return this.subjectService.findRequiredSubjects(+id);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSubjectDto: UpdateSubjectDto) {
     return this.subjectService.update(+id, updateSubjectDto);

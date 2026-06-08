@@ -23,6 +23,35 @@ export class SubjectService {
     });
   }
 
+  findByCode(subject_code: string) {
+    return this.prisma.subject.findFirst({
+      where: { subject_code },
+    });
+  }
+
+  findByCourse(courseId: number) {
+    return this.prisma.course_subject.findMany({
+      where: { course_id: courseId },
+      include: {
+        subject: true, // ดึงข้อมูลรายละเอียดวิชามาด้วย
+      },
+      orderBy: [
+        { year: 'asc' },      // เรียงตามชั้นปี
+        { semester: 'asc' },  // และเรียงตามเทอม
+      ],
+    });
+  }
+
+  findRequiredSubjects(subjectId: number) {
+    return this.prisma.require_subject.findMany({
+      where: { subject_id: subjectId },
+      include: {
+        required_subject: true,
+      },
+    });
+  }
+  
+
   update(id: number, updateSubjectDto: UpdateSubjectDto) {
     return this.prisma.subject.update({
       where: { id },
