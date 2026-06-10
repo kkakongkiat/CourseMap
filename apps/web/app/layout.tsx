@@ -24,8 +24,10 @@ export default function RootLayout({
       lang="en"
       className={`${kanit.variable} ${kanit.className} h-full antialiased`}
     >
-      <Topbar />
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Topbar />
+        {children}
+      </body>
     </html>
   );
 }
