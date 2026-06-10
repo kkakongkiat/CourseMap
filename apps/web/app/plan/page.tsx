@@ -5,6 +5,8 @@ import { ChevronDown, University, GraduationCap, Bookmark, LucideIcon } from "lu
 import facultyService, { Faculty } from "../service/faculty.service";
 import departmentService, { Department } from "../service/department.service";
 import courseService, { Course } from "../service/course.service";
+import PlanTable from "../components/planTable";
+import subjectService, { CourseSubjectItem } from "../service/subject.service";
 
 function Dropdown({
   logo: Logo,
@@ -78,6 +80,10 @@ export default function PlanPage() {
   const [faculty, setFaculty] = useState<number | "">("");
   const [major, setMajor] = useState<number | "">("");
   const [plan, setPlan] = useState<number | "">("");
+  
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState<Course | null>(null);
+  const [courseSubjects, setCourseSubjects] = useState<CourseSubjectItem[]>([]);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -102,8 +108,47 @@ export default function PlanPage() {
     .filter(c => c.department_id === major)
     .map(c => ({ id: c.id, name: c.thai_name || `แผน ${c.id}` }));
 
-  // หา Course ที่ถูกเลือกเพื่อดึงข้อมูลแผนการเรียนมาแสดงต่อ
-  const selectedCourse = courseList.find(c => c.id === plan);
+  // เมื่อเลือกแผนการเรียน (Course) ให้ดึงข้อมูลรายละเอียดและรายวิชาที่จัดเรียงปี/เทอมมาแล้ว พร้อมกัน
+  useEffect(() => {
+    if (plan) {
+      setIsLoadingPlan(true);
+      Promise.all([
+        courseService.getById(plan as number),
+        subjectService.getByCourseId(plan as number)
+      ]).then(([courseRes, subjectsRes]) => {
+        setSelectedCourseDetail(courseRes);
+        setCourseSubjects(subjectsRes);
+      })
+      .catch(err => console.error("Error fetching plan details:", err))
+      .finally(() => setIsLoadingPlan(false));
+    } else {
+      setSelectedCourseDetail(null);
+      setCourseSubjects([]);
+    }
+  }, [plan]);
+
+  // จัดกลุ่มรายวิชาตาม ปี (year) และ เทอม (semester) พร้อมรองรับกรณีเป็น null
+  const groupedSubjects = courseSubjects.reduce((acc, curr) => {
+    const y = curr.year ?? 0;
+    const s = curr.semester ?? 0;
+    const key = `${y}-${s}`;
+    if (!acc[key]) {
+      acc[key] = { year: y, semester: s, courses: [] };
+    }
+    acc[key].courses.push(curr);
+    return acc;
+  }, {} as Record<string, { year: number; semester: number; courses: CourseSubjectItem[] }>);
+
+  // แปลงจาก Object คืนเป็น Array และจัดเรียง ปี/เทอม ให้ถูกต้อง (นำปีที่ไม่ได้ระบุไว้ล่างสุด)
+  const planGroups = Object.values(groupedSubjects).sort((a, b) => {
+    const yearA = a.year === 0 ? 99 : a.year;
+    const yearB = b.year === 0 ? 99 : b.year;
+    if (yearA !== yearB) return yearA - yearB;
+
+    const semA = a.semester === 0 ? 99 : a.semester;
+    const semB = b.semester === 0 ? 99 : b.semester;
+    return semA - semB;
+  });
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] flex flex-col items-center pt-20 px-4">
@@ -155,17 +200,49 @@ export default function PlanPage() {
           />
         </div>
 
+        {/* ส่วนแสดงสถานะกำลังโหลด */}
+        {isLoadingPlan && (
+          <div className="mt-8 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-16 animate-in fade-in duration-300">
+            <div className="w-8 h-8 border-4 border-[#e6f1fb] border-t-[#1a6fcc] rounded-full animate-spin mb-4"></div>
+            <p className="text-[#0f2d5c] font-medium text-sm">กำลังโหลดข้อมูลแผนการเรียน...</p>
+          </div>
+        )}
+
         {/* ส่วนแสดงหน้าแผนการเรียนที่ดึงมาตาม Course (Plan) ที่เลือก */}
-        {selectedCourse && (
+        {!isLoadingPlan && selectedCourseDetail && (
           <div className="mt-8 bg-white p-8 rounded-2xl border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-2xl font-bold text-[#0f2d5c] mb-2">
-              {selectedCourse.thai_name || "ไม่มีชื่อแผนการเรียน"}
+              {selectedCourseDetail.thai_name || "ไม่มีชื่อแผนการเรียน"}
             </h2>
-            {selectedCourse.eng_name && (
-              <p className="text-gray-500 mb-6">{selectedCourse.eng_name}</p>
+            {selectedCourseDetail.eng_name && (
+              <p className="text-gray-500 mb-6">{selectedCourseDetail.eng_name}</p>
             )}
             
-
+            <div className="flex flex-col gap-6">
+              {planGroups.map((group, idx) => (
+                <PlanTable 
+                  key={idx} 
+                  year={group.year} 
+                  semester={group.semester} 
+                  subjects={group.courses.map(cs => ({
+                    subject_code: cs.subject?.subject_code || "-",
+                    thai_name: cs.subject?.thai_name || "ไม่มีชื่อวิชา",
+                    eng_name: cs.subject?.eng_name || "",
+                    credit: cs.subject?.credit || 0,
+                    require_subjects: cs.subject?.require_subjects
+                      ?.filter(req => req.required_subject?.subject_code) // กรองเอาเฉพาะอันที่มีวิชาบังคับก่อนจริงๆ
+                      .map(req => ({
+                        subject_code: req.required_subject?.subject_code || "",
+                        thai_name: req.required_subject?.thai_name || "",
+                        eng_name: req.required_subject?.eng_name || "",
+                      })) || []
+                  }))} 
+                />
+              ))}
+              {planGroups.length === 0 && (
+                <p className="text-center text-gray-500 py-4">ยังไม่มีข้อมูลรายวิชาในแผนการเรียนนี้</p>
+              )}
+            </div>
           </div>
         )}
 

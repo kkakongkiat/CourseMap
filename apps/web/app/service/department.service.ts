@@ -25,7 +25,7 @@ export const departmentService = {
    * @param id รหัสของภาควิชา
    */
   async getById(id: number): Promise<Department> {
-    const response = await fetch(`${API_BASE_URL}/${id}`);
+    const response = await fetch(`${API_BASE_URL}/course/${id}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch department with id ${id}`);
     }

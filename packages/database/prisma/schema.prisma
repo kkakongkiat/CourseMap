@@ -35,7 +35,7 @@ model faculty {
 model require_subject {
   id                                              Int      @id @default(autoincrement())
   subject_id                                      Int?
-  require_subject_id                                Int?
+  require_subject_id                              Int?
   required_subject                                subject? @relation("require_subject_required", fields: [require_subject_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_other_subject_related_subject")
   subject                                         subject? @relation("require_subject_subject", fields: [subject_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_other_subject_subject")
 }

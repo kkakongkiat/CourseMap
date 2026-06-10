@@ -32,10 +32,16 @@ export class SubjectController {
     return this.subjectService.findByCourse(+courseId);
   }
 
-  @Get(':id/requires')
+  @Get(':id/require')
   findRequiredSubjects(@Param('id') id: string) {
     return this.subjectService.findRequiredSubjects(+id);
   }
+
+  @Get('group/:group_id')
+  findBySubjectGroups(@Param('group_id') group_id: string) {
+    return this.subjectService.findBySubjectGroups(+group_id);
+  }
+
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSubjectDto: UpdateSubjectDto) {

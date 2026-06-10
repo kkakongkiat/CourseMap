@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Kanit } from "next/font/google";
 import "./globals.css";
 import Topbar from "./components/topBar";
+import Footer from "./components/footer";
 
 const kanit = Kanit({
   subsets: ["latin", "thai"],
@@ -27,6 +28,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Topbar />
         {children}
+        <Footer />
       </body>
     </html>
   );
