@@ -5,6 +5,7 @@ import { ChevronDown, University, GraduationCap, Bookmark, LucideIcon } from "lu
 import facultyService, { Faculty } from "../service/faculty.service";
 import departmentService, { Department } from "../service/department.service";
 import courseService, { Course } from "../service/course.service";
+import Roadmap from "../components/roadmap";
 
 function Dropdown({
   logo: Logo,
@@ -164,7 +165,8 @@ export default function RoadmapPage() {
             {selectedCourse.eng_name && (
               <p className="text-gray-500 mb-6">{selectedCourse.eng_name}</p>
             )}
-            
+            <Roadmap courseId={selectedCourse.id} />
+
 
           </div>
         )}
