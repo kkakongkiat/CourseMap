@@ -162,17 +162,12 @@ function buildNodes(courseSubjects: CourseSubjectItem[]): RoadmapNode[] {
     0,
   );
   const unscheduledColumn = maxScheduledColumn + 1;
-  const uniqueSubjects = new Map<number, CourseSubjectItem>();
-
-  courseSubjects.forEach((item) => {
-    if (item.subject?.id && !uniqueSubjects.has(item.subject.id)) {
-      uniqueSubjects.set(item.subject.id, item);
-    }
-  });
 
   const periodHeaders = new Map<number, PeriodHeaderFlowNode>();
   let maxRow = 0;
-  const courseNodes = Array.from(uniqueSubjects.values()).map<CourseFlowNode>((item) => {
+  const courseNodes = courseSubjects
+    .filter((item) => item.subject?.id)
+    .map<CourseFlowNode>((item) => {
     const year = item.year ?? 0;
     const semester = item.semester ?? 0;
     const key = `${year}-${semester}`;
@@ -206,7 +201,7 @@ function buildNodes(courseSubjects: CourseSubjectItem[]): RoadmapNode[] {
     }
 
     return {
-      id: String(item.subject.id),
+      id: String(item.id),
       type: "course",
       position: {
         x: column * COLUMN_WIDTH,
@@ -219,12 +214,12 @@ function buildNodes(courseSubjects: CourseSubjectItem[]): RoadmapNode[] {
           "ไม่มีชื่อรายวิชา",
         eng_name:
           item.subject.eng_name ||
-          "No English Name",
+          "  ",
         color,
         period: getPeriod(item),
       },
-    };
-  });
+      };
+    });
 
   const routingBoundary: RoutingBoundaryFlowNode = {
     id: "routing-boundary",
@@ -243,10 +238,15 @@ function buildNodes(courseSubjects: CourseSubjectItem[]): RoadmapNode[] {
 }
 
 function buildEdges(courseSubjects: CourseSubjectItem[]): RoadmapFlowEdge[] {
-  const subjectIds = new Set(
-    courseSubjects.map((item) => item.subject?.id).filter(Boolean),
-  );
-  const subjectLayout = new Map<number, { column: number; row: number }>();
+  type SubjectLayout = {
+    nodeId: number;
+    subjectId: number;
+    column: number;
+    row: number;
+  };
+
+  const subjectLayouts: SubjectLayout[] = [];
+  const layoutByNodeId = new Map<number, SubjectLayout>();
   const rowCounts = new Map<string, number>();
   const maxScheduledColumn = courseSubjects.reduce(
     (maxColumn, item) =>
@@ -257,15 +257,22 @@ function buildEdges(courseSubjects: CourseSubjectItem[]): RoadmapFlowEdge[] {
   let maxRow = 0;
 
   courseSubjects.forEach((item) => {
-    if (!item.subject?.id || subjectLayout.has(item.subject.id)) {
+    if (!item.subject?.id) {
       return;
     }
 
     const key = `${item.year ?? 0}-${item.semester ?? 0}`;
     const row = rowCounts.get(key) ?? 0;
     const column = getColumn(item, unscheduledColumn);
+    const layout = {
+      nodeId: item.id,
+      subjectId: item.subject.id,
+      column,
+      row,
+    };
     rowCounts.set(key, row + 1);
-    subjectLayout.set(item.subject.id, { column, row });
+    subjectLayouts.push(layout);
+    layoutByNodeId.set(item.id, layout);
     maxRow = Math.max(maxRow, row);
   });
 
@@ -273,8 +280,8 @@ function buildEdges(courseSubjects: CourseSubjectItem[]): RoadmapFlowEdge[] {
     edgeId: string;
     sourceId: number;
     targetId: number;
-    sourceLayout: { column: number; row: number };
-    targetLayout: { column: number; row: number };
+    sourceLayout: SubjectLayout;
+    targetLayout: SubjectLayout;
     direction: 1 | -1;
   };
 
@@ -284,25 +291,42 @@ function buildEdges(courseSubjects: CourseSubjectItem[]): RoadmapFlowEdge[] {
     item.subject?.require_subjects?.forEach((requirement) => {
       const sourceId =
         requirement.required_subject?.id ?? requirement.require_subject_id;
-      const targetId = item.subject.id;
+      const targetId = item.id;
 
-      if (!sourceId || !subjectIds.has(sourceId)) {
+      if (!sourceId) {
         return;
       }
 
-      const sourceLayout = subjectLayout.get(sourceId);
-      const targetLayout = subjectLayout.get(targetId);
-      if (!sourceLayout || !targetLayout) {
+      const targetLayout = layoutByNodeId.get(targetId);
+      if (!targetLayout) {
+        return;
+      }
+
+      const sourceLayout = subjectLayouts
+        .filter(
+          (layout) =>
+            layout.subjectId === sourceId &&
+            (layout.column < targetLayout.column ||
+              (layout.column === targetLayout.column &&
+                layout.row < targetLayout.row)),
+        )
+        .sort(
+          (layoutA, layoutB) =>
+            layoutB.column - layoutA.column ||
+            layoutB.row - layoutA.row,
+        )[0];
+
+      if (!sourceLayout) {
         return;
       }
 
       const direction: 1 | -1 =
         targetLayout.column >= sourceLayout.column ? 1 : -1;
-      const edgeId = `${sourceId}-${targetId}`;
+      const edgeId = `${sourceLayout.nodeId}-${targetId}`;
 
       relations.set(edgeId, {
         edgeId,
-        sourceId,
+        sourceId: sourceLayout.nodeId,
         targetId,
         sourceLayout,
         targetLayout,
@@ -322,7 +346,7 @@ function buildEdges(courseSubjects: CourseSubjectItem[]): RoadmapFlowEdge[] {
   const laneUsage = new Map<number, number>();
   const groupLanes = new Map<string, number>();
   const occupiedPositions = new Set(
-    Array.from(subjectLayout.values()).map(
+    subjectLayouts.map(
       ({ column, row }) => `${column}:${row}`,
     ),
   );
