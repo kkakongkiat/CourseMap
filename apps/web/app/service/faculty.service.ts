@@ -1,5 +1,5 @@
 // กำหนด URL ของ API (แนะนำให้ดึงจาก Environment Variable ในใช้งานจริง เช่น process.env.NEXT_PUBLIC_API_URL)
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/faculty`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/faculty`;
 
 export interface Faculty {
   id: number;

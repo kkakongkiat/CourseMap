@@ -1,4 +1,4 @@
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/subject-group`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "")}/subject-group`;
 
 export interface Subject_Group {
     id: number;
