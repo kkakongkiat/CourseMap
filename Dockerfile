@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 RUN npm install --global pnpm@11.5.2
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/database packages/database
 COPY packages/shared/package.json packages/shared/package.json
