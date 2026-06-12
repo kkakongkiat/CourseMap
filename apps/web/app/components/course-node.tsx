@@ -6,6 +6,8 @@ export type CourseNodeData = {
   code: string;
   thai_name: string;
   eng_name: string;
+  group_name: string;
+  credit: number | string;
   color: string;
   period: string;
 };
@@ -32,7 +34,12 @@ export default function CourseNode({
         }`}
         style={{ backgroundColor: data.color }}
       >
-        <div className="text-sm font-bold text-slate-900">{data.code}</div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-bold text-slate-900">{data.code}</div>
+          <div className="shrink-0 text-[11px] text-slate-600">
+            {data.credit}
+          </div>
+        </div>
         <div className="mt-1 line-clamp-2 text-xs text-slate-700">
           {data.thai_name}
         </div>

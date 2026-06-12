@@ -8,6 +8,11 @@ export interface Subject {
   detail?: string;
   credit?: number;
   group_id?: number;
+  subject_group?: {
+    id: number;
+    thai_name?: string;
+    eng_name?: string;
+  } | null;
   require_subjects?: {
     id: number;
     subject_id?: number | null;

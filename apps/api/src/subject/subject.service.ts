@@ -45,6 +45,7 @@ export class SubjectService {
       include: {
         subject: { // ดึงข้อมูลรายละเอียดวิชา พร้อมวิชาบังคับก่อน
           include: {
+            subject_group: true,
             require_subjects: { // ใช้ชื่อ require_subjects ให้ตรงกับใน schema.prisma
               include: {
                 required_subject: true,

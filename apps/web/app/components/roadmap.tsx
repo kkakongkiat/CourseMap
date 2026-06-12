@@ -208,13 +208,18 @@ function buildNodes(courseSubjects: CourseSubjectItem[]): RoadmapNode[] {
         y: currentRow * ROW_HEIGHT,
       },
       data: {
-        code: item.subject.subject_code || item.subject.thai_name || "ไม่มีรหัสวิชา",
+        code: item.subject.subject_code || item.subject.subject_group?.thai_name || "ไม่มีรหัสวิชา",
         thai_name:
           item.subject.thai_name ||
           "ไม่มีชื่อรายวิชา",
         eng_name:
           item.subject.eng_name ||
           "  ",
+        group_name:
+          item.subject.subject_group?.thai_name ||
+          item.subject.subject_group?.eng_name ||
+          "ไม่ระบุกลุ่มวิชา",
+        credit: item.subject.credit ? `${item.subject.credit} หน่วยกิต` : "ตามหลักสูตร",
         color,
         period: getPeriod(item),
       },
@@ -519,7 +524,7 @@ export default function Roadmap({ courseId }: RoadmapProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-[600px] w-full items-center justify-center rounded-lg border bg-slate-50">
+      <div className="flex h-[400px] w-full items-center justify-center rounded-lg border bg-slate-50">
         <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
           กำลังโหลดแผนผังการเรียน...
@@ -540,7 +545,7 @@ export default function Roadmap({ courseId }: RoadmapProps) {
   }
 
   return (
-    <div className="h-[600px] w-full overflow-hidden rounded-lg border bg-white">
+    <div className="h-[400px] w-full overflow-hidden rounded-lg border bg-white">
       <ReactFlow
         nodes={nodes}
         edges={edges}
